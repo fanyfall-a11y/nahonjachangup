@@ -42,7 +42,7 @@ def fetch_bizinfo_programs(page: int) -> list[dict]:
         url = "https://www.bizinfo.go.kr/uss/rss/bizinfoApi.do"
         params = {
             "crtfcKey": config.BIZINFO_API_KEY,
-            "numOfRows": config.ROWS_PER_PAGE,
+            "pageUnit": config.ROWS_PER_PAGE,
             "pageIndex": page,
             "bsnsSe": "ALL"
         }
