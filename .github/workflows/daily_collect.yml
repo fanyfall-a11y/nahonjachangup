@@ -27,6 +27,42 @@ jobs:
       - name: 나눔고딕 폰트 설치 (카드뉴스용)
         run: sudo apt-get install -y fonts-nanum
 
+      - name: API 연결 진단
+        run: |
+          python3 - <<'EOF'
+          import requests, os, sys
+          key = os.environ.get("BIZINFO_API_KEY", "")
+          print(f"[진단] API 키 설정 여부: {'있음 (' + key[:6] + '...)' if key else '없음'}")
+
+          # 기업마당 API 테스트
+          print("[진단] 기업마당 API 호출 중...")
+          try:
+              r = requests.get(
+                  "https://www.bizinfo.go.kr/uss/rss/bizinfoApi.do",
+                  params={"crtfcKey": key, "numOfRows": 3, "pageIndex": 1, "bsnsSe": "ALL"},
+                  timeout=15
+              )
+              print(f"  상태코드: {r.status_code}")
+              print(f"  응답 앞 500자: {r.text[:500]}")
+          except Exception as e:
+              print(f"  오류: {e}")
+
+          # 기업마당 크롤링 테스트
+          print("[진단] 기업마당 크롤링 시도...")
+          try:
+              r2 = requests.get(
+                  "https://www.bizinfo.go.kr/web/lay1/bbs/S1T122C128/AS/74/list.do",
+                  headers={"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"},
+                  timeout=15
+              )
+              print(f"  상태코드: {r2.status_code}")
+              print(f"  응답 앞 300자: {r2.text[:300]}")
+          except Exception as e:
+              print(f"  오류: {e}")
+          EOF
+        env:
+          BIZINFO_API_KEY: ${{ secrets.BIZINFO_API_KEY }}
+
       - name: 메인 파이프라인 실행
         run: python3 src/main.py
         env:
