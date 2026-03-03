@@ -23,94 +23,67 @@ def send_daily_report(programs: list[dict], content: dict, image_paths: list[str
         return False
 
     # 오늘 날짜 포맷팅
-    today = datetime.now().strftime("%Y-%m-%d")
+    now = datetime.now()
+    today = now.strftime("%Y-%m-%d")
+    today_display = f"{now.year}. {now.month}. {now.day}."
 
     # 이메일 제목 설정
-    subject = f"[나혼자창업] {today} 정부지원사업 {len(programs)}건 안내"
+    subject = f"[나혼자창업] {today} 신규 지원사업 {len(programs)}건 안내"
 
-    # HTML 본문 구성 시작
-    html = f"""
-    <html>
-    <body>
-        <h2>오늘의 정부지원사업 안내</h2>
-        <p>수집일: {today}</p>
-        <table border="1" style="border-collapse: collapse; width: 100%;">
-            <thead>
-                <tr style="background-color: #f2f2f2; text-align: left;">
-                    <th style="padding: 8px;">제목</th>
-                    <th style="padding: 8px;">기관</th>
-                    <th style="padding: 8px;">마감일</th>
-                    <th style="padding: 8px;">상태</th>
-                </tr>
-            </thead>
-            <tbody>
-    """
+    # 인스타그램 멘트 리스트 (프로그램별 💬 멘트용)
+    insta_list = content.get("instagram", [])
 
-    # 프로그램 목록 테이블 생성
-    for prog in programs:
+    # 이메일 본문 구성 (텍스트 형식)
+    lines = []
+    lines.append(f"📬 나혼자창업 신규 지원사업 알림")
+    lines.append(f"📅 {today_display} 기준 {len(programs)}건")
+    lines.append("=" * 50)
+    lines.append("")
+
+    for i, prog in enumerate(programs):
         title = prog.get('title', '')
-        agency = prog.get('agency', '')
-        end_date = prog.get('end_date', '')
+        period = prog.get('period', '') or f"{prog.get('start_date','')} ~ {prog.get('end_date','')}"
+        url = prog.get('detail_url', '')
+        target = prog.get('target', '')
         status = prog.get('status', '')
 
-        # 마감임박 공고(status=="마감임박")인 경우 빨간 텍스트 강조
-        style_attr = "color: red; font-weight: bold;" if status == "마감임박" else ""
+        # 💬 멘트: Gemini 인스타 캡션 우선, 없으면 기본 텍스트
+        ment = insta_list[i] if i < len(insta_list) else f"{title} 공고가 등록되었습니다."
+        # 첫 줄만 사용 (너무 길면 잘라냄)
+        ment_short = ment.split('\n')[0][:120]
 
-        html += f"""
-                <tr>
-                    <td style="padding: 8px;">{title}</td>
-                    <td style="padding: 8px;">{agency}</td>
-                    <td style="padding: 8px;">{end_date}</td>
-                    <td style="padding: 8px; {style_attr}">{status}</td>
-                </tr>
-        """
+        lines.append(f"【{i+1}】 {title}")
+        lines.append(f"💬 {ment_short}")
+        if target:
+            lines.append(f"👥 {target}")
+        if period.strip():
+            lines.append(f"📅 {period}")
+        if url:
+            lines.append(f"🔗 {url}")
+        if status == "마감임박":
+            lines.append("⚠️ 마감임박!")
+        lines.append("-" * 50)
+        lines.append("")
 
-    html += """
-            </tbody>
-        </table>
-        <br/>
-    """
-
-    # 블로그 콘텐츠 섹션 (content.get("naver", []) 첫 번째 항목)
-    naver_list = content.get("naver", [])
-    if naver_list:
-        html += f"""
-        <h3>블로그 콘텐츠</h3>
-        <p>{naver_list[0]}</p>
-        <br/>
-        """
-
-    # 인스타그램 멘트 (content.get("instagram", []) 첫 번째 항목)
-    insta_list = content.get("instagram", [])
-    if insta_list:
-        html += f"""
-        <h3>인스타그램 멘트</h3>
-        <p>{insta_list[0]}</p>
-        """
-
-    html += """
-    </body>
-    </html>
-    """
+    body = "\n".join(lines)
 
     # 메시지 객체 생성
     msg = MIMEMultipart()
     msg['Subject'] = subject
     msg['From'] = config.EMAIL_FROM
 
-    # image_paths 첫 번째 이미지 첨부 (MIMEImage, 없으면 건너뜀)
-    if image_paths:
+    # 카드뉴스 이미지 전체 첨부
+    for img_path in image_paths:
         try:
-            with open(image_paths[0], 'rb') as f:
+            with open(img_path, 'rb') as f:
                 img_data = f.read()
-            image = MIMEImage(img_data, name=os.path.basename(image_paths[0]))
+            image = MIMEImage(img_data, name=os.path.basename(img_path))
             msg.attach(image)
         except Exception as e:
-            print(f"이미지 첨부 중 오류 발생: {e}")
-            # 이미지 첨부 실패 시 이메일 발송은 계속 진행
+            print(f"이미지 첨부 중 오류 발생 ({img_path}): {e}")
 
-    # HTML 본문 첨부
-    msg.attach(MIMEText(html, 'html'))
+    # 텍스트 본문 첨부
+    msg.attach(MIMEText(body, 'plain', 'utf-8'))
 
     # SMTP 발송 처리
     try:

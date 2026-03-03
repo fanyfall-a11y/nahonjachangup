@@ -67,7 +67,11 @@ def fetch_bizinfo_programs(page: int) -> list[dict]:
                     "field": item.findtext('pldirSportRealmLclasCodeNm', ''),
                     "start_date": _normalize_date(parts[0]),
                     "end_date": _normalize_date(parts[1] if len(parts) > 1 else ''),
+                    "period": period,
                     "detail_url": item.findtext('pblancUrl', ''),
+                    "target": item.findtext('trgetNm', ''),
+                    "contact": item.findtext('refrncNm', ''),
+                    "application_method": item.findtext('reqstMthPapersCn', ''),
                     "source": "bizinfo_api",
                     "status": "",
                     "collected_at": datetime.now().isoformat()
