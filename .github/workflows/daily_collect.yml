@@ -43,7 +43,7 @@ jobs:
                   timeout=15
               )
               print(f"  상태코드: {r.status_code}")
-              print(f"  응답 앞 500자: {r.text[:500]}")
+              print(f"  응답 앞 3000자:\n{r.text[:3000]}")
           except Exception as e:
               print(f"  오류: {e}")
 
