@@ -81,6 +81,77 @@ def save_as_markdown(programs: list[dict], filepath: str) -> str:
         return ""
 
 
+def save_content_files(programs: list[dict], content: dict, date_str: str) -> list[str]:
+    """
+    Gemini 생성 콘텐츠를 프로그램별 텍스트 파일로 저장하는 함수.
+    멘트요약 / 네이버블로그 / 티스토리 / 블로그스팟 파일을 생성한다.
+    """
+    saved = []
+    ensure_output_dir(config.OUTPUT_DIR)
+
+    insta_list = content.get("instagram", [])
+    naver_list = content.get("naver", [])
+    tistory_list = content.get("tistory", [])
+    blogspot_list = content.get("blogspot", [])
+
+    for i, prog in enumerate(programs):
+        title = prog.get("title", "")
+        period = prog.get("period", "") or f"{prog.get('start_date','')} ~ {prog.get('end_date','')}"
+        contact = prog.get("contact", "")
+        url = prog.get("detail_url", "")
+        target = prog.get("target", "")
+        field = prog.get("field", "")
+        idx = i + 1
+
+        # 00_멘트_요약.txt
+        try:
+            ment = insta_list[i] if i < len(insta_list) else ""
+            lines = [
+                f"[{title}]",
+                "",
+                "📌 핵심 멘트 (카드뉴스용):",
+                ment,
+                "",
+                "👥 신청자격:",
+                target,
+                "",
+                "💰 지원분야:",
+                field,
+                "",
+                "📅 신청기간:",
+                period,
+            ]
+            if contact:
+                lines += ["", "📞 문의:", contact]
+            if url:
+                lines += ["", "🔗 링크:", url]
+
+            path = os.path.join(config.OUTPUT_DIR, f"{date_str}_{idx:02d}_멘트요약.txt")
+            with open(path, "w", encoding="utf-8") as f:
+                f.write("\n".join(lines))
+            saved.append(path)
+        except Exception as e:
+            print(f"[오류] 멘트요약 저장 실패 ({idx}): {e}")
+
+        # 플랫폼별 블로그 글 저장
+        platform_map = [
+            ("네이버블로그", naver_list),
+            ("티스토리", tistory_list),
+            ("블로그스팟", blogspot_list),
+        ]
+        for platform_name, plist in platform_map:
+            if i < len(plist):
+                try:
+                    path = os.path.join(config.OUTPUT_DIR, f"{date_str}_{idx:02d}_{platform_name}.txt")
+                    with open(path, "w", encoding="utf-8") as f:
+                        f.write(plist[i])
+                    saved.append(path)
+                except Exception as e:
+                    print(f"[오류] {platform_name} 저장 실패 ({idx}): {e}")
+
+    return saved
+
+
 def save(programs: list[dict]) -> str:
     """
     설정에 따라 적절한 형식으로 파일을 저장하는 메인 함수

@@ -97,6 +97,14 @@ def main() -> None:
         except Exception as e:
             print(f"[오류] 콘텐츠 생성 실패: {e}")
 
+    # 14-2. 콘텐츠 파일 저장 (멘트요약 / 블로그 글)
+    if processed and content:
+        try:
+            today_str = datetime.now().strftime("%Y-%m-%d")
+            storage.save_content_files(processed[:config.CONTENT_LIMIT], content, today_str)
+        except Exception as e:
+            print(f"[오류] 콘텐츠 파일 저장 실패: {e}")
+
     # 이미지 경로 초기화
     image_paths = []
 
