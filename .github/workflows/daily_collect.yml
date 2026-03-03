@@ -1,0 +1,44 @@
+name: 나혼자창업 - 정부지원사업 자동 수집
+
+on:
+  schedule:
+    - cron: '10 0 * * *'  # UTC 00:10 = KST 09:10
+  workflow_dispatch:  # 수동 실행 가능
+
+jobs:
+  collect-and-notify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 코드 체크아웃
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Python 3.11 설정
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.11"
+
+      - name: 의존성 설치
+        run: pip install -r requirements.txt
+
+      - name: 나눔고딕 폰트 설치 (카드뉴스용)
+        run: sudo apt-get install -y fonts-nanum
+
+      - name: 메인 파이프라인 실행
+        run: python3 src/main.py
+        env:
+          BIZINFO_API_KEY: ${{ secrets.BIZINFO_API_KEY }}
+          KSTARTUP_API_KEY: ${{ secrets.KSTARTUP_API_KEY }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          EMAIL_FROM: ${{ secrets.EMAIL_FROM }}
+          EMAIL_PASSWORD: ${{ secrets.EMAIL_PASSWORD }}
+          EMAIL_TO: ${{ secrets.EMAIL_TO }}
+
+      - name: 결과물 자동 커밋 및 푸시
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add output/ logs/ || true
+          git diff --staged --quiet || git commit -m "자동 수집: $(date +'%Y-%m-%d')"
+          git push || true

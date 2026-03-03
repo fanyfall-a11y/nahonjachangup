@@ -1,0 +1,6 @@
+requests>=2.31.0           # HTTP 요청 라이브러리
+beautifulsoup4>=4.12.0     # HTML/XML 파싱
+lxml>=4.9.0                # XML/HTML 파서 (BeautifulSoup 가속)
+google-genai>=1.0.0        # Gemini API (AI 콘텐츠 생성, 최신 패키지)
+Pillow>=10.0.0             # 카드뉴스 이미지 생성
+schedule>=1.2.0            # 로컬 스케줄러 (선택적)
