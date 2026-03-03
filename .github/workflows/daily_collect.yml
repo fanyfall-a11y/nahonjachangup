@@ -39,11 +39,17 @@ jobs:
           try:
               r = requests.get(
                   "https://www.bizinfo.go.kr/uss/rss/bizinfoApi.do",
-                  params={"crtfcKey": key, "numOfRows": 3, "pageIndex": 1, "bsnsSe": "ALL"},
+                  params={"crtfcKey": key, "pageUnit": 2, "pageIndex": 1, "bsnsSe": "ALL"},
                   timeout=15
               )
               print(f"  상태코드: {r.status_code}")
-              print(f"  응답 앞 3000자:\n{r.text[:3000]}")
+              # 첫 번째 item 태그만 추출해서 출력
+              import re as _re
+              items = _re.findall(r'<item>.*?</item>', r.text, _re.DOTALL)
+              if items:
+                  print(f"  첫 번째 item 태그:\n{items[0]}")
+              else:
+                  print(f"  item 없음. 응답:\n{r.text[:1000]}")
           except Exception as e:
               print(f"  오류: {e}")
 
