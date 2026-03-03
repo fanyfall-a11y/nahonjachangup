@@ -57,14 +57,17 @@ def fetch_bizinfo_programs(page: int) -> list[dict]:
         # item 태그 찾기
         for item in root.findall('.//item'):
             try:
+                # reqstBeginEndDe 형식: "2026-02-09 ~ 2026-03-09"
+                period = item.findtext('reqstBeginEndDe', '')
+                parts = [p.strip() for p in period.split('~')] if '~' in period else [period, '']
                 program = {
                     "id": item.findtext('pblancId', ''),
                     "title": item.findtext('pblancNm', ''),
-                    "agency": item.findtext('insttNm', ''),
-                    "field": item.findtext('pldirSportRealmLclasCode', ''),
-                    "start_date": _normalize_date(item.findtext('reqstBgngDt', '')),
-                    "end_date": _normalize_date(item.findtext('reqstEndDt', '')),
-                    "detail_url": item.findtext('detailUrl', ''),
+                    "agency": item.findtext('jrsdInsttNm', ''),
+                    "field": item.findtext('pldirSportRealmLclasCodeNm', ''),
+                    "start_date": _normalize_date(parts[0]),
+                    "end_date": _normalize_date(parts[1] if len(parts) > 1 else ''),
+                    "detail_url": item.findtext('pblancUrl', ''),
                     "source": "bizinfo_api",
                     "status": "",
                     "collected_at": datetime.now().isoformat()
